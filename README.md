@@ -1,51 +1,239 @@
 # CodeXray Observability & Security Microservice
 
-A simplified observability and security microservice that collects system metrics, generates alerts, and exposes secure APIs. Includes a bonus web dashboard for visualization and configuration, plus a standalone Log Analyzer script.
+A simplified observability and security microservice that collects system metrics, generates alerts, and exposes secure APIs for reporting. Includes a bonus web dashboard for visualization and configuration, plus a standalone Log Analyzer script.
 
-## Features
+![Dashboard Overview 1](/screenshots/dashboard-overview-1.png)
+![Dashboard Overview 2](/screenshots/dashboard-overview-2.png)
+![Alerts Table](/screenshots/alerts-table.png)
+![Thresholds Config](/screenshots/thresholds-config.png)
 
-- Secure auth with password hashing (bcryptjs), in-memory sessions
-- Metrics collection (CPU %, Memory %) with alerting on thresholds
-- In-memory storage for metrics and alerts
-- Secure reporting API (/api/summary)
-- Bonus dashboard (Next.js App Router) with charts (Recharts) and SWR
-- Log Analyzer Node script (Phase 1)
+## Table of Contents
+- Overview
+- What’s Implemented (Phases 1–4 + Bonus)
+- Quick Start (Local)
+- Log Analyzer (Phase 1)
+- API Reference (Auth, Metrics, Thresholds, Summary)
+- Dashboard (Bonus)
+- Architecture Summary
+- Security Notes
+- Sample Outputs (placeholders)
+- Troubleshooting
+- Submission Checklist
 
-## Folder Structure
+---
 
-- app/api/* — REST API routes
-- app/page.tsx — Dashboard UI
-- lib/* — Store, types, security, metrics collection
-- components/* — UI components for auth, charts, thresholds, alerts
-- scripts/log-analyzer.ts — Phase 1 Log Analyzer utility
+## Overview
+This project demonstrates fundamentals of observability:
+- Collect CPU% and Memory% metrics periodically
+- Generate alerts when thresholds are breached
+- Store metrics/alerts in memory (swapable for DB)
+- Secure endpoints for summaries and configuration
+- Optional dashboard to visualize trends and manage thresholds
 
-## APIs
+---
 
-- POST /api/register — { email, password } → { token, user }
-- POST /api/login — { email, password } → { token, user }
-- GET /api/validate-session — header Authorization: Bearer <token>
-- GET /api/metrics?n=100 — collects once, returns latest, last N readings, and recent alerts
-- GET /api/summary?n=10 — SECURED, requires Authorization header
-- GET /api/config/thresholds — SECURED, get thresholds
-- POST /api/config/thresholds — SECURED, set thresholds { cpuThreshold, memThreshold }
+## What’s Implemented (Phases 1–4 + Bonus)
 
-## Security
+- Phase 1: Fundamentals & Data Structures (Log Analyzer)
+  - scripts/log-analyzer.ts
+  - Parses a log file, counts INFO/WARN/ERROR, and shows top 5 errors.
+- Phase 2: Secure Coding & Encoding
+  - Endpoints: app/api/register/route.ts, app/api/login/route.ts, app/api/validate-session/route.ts
+  - Security: lib/security.ts (bcryptjs hashing, session tokens)
+  - In-memory store: lib/store.ts, types: lib/types.ts
+- Phase 3: Observability Core
+  - Metrics collection and alerting: lib/metrics.ts
+  - Metrics endpoint: app/api/metrics/route.ts
+  - Thresholds config: app/api/config/thresholds/route.ts
+- Phase 4: Reporting API
+  - Summary endpoint: app/api/summary/route.ts (secured)
+- Bonus: Web Dashboard
+  - app/page.tsx + components/* (charts via Recharts, data via SWR)
+  - thresholds form, alerts table, live metrics chart
 
-- Passwords are hashed using bcryptjs. No plaintext storage.
-- Session tokens are required for /summary and thresholds endpoints.
-- Sessions expire after 24 hours.
-- This project uses in-memory stores for simplicity; swap with a database for persistence.
+---
+
+## Quick Start (Local)
+
+Prerequisites
+- Node.js 18+ (recommended: 20 LTS)
+- Git (optional)
+
+Install and run
+- npm install
+- npm run dev
+- Open http://localhost:3000
+
+Notes
+- This build uses in-memory storage for users, sessions, metrics, alerts.
+- For persistence, replace lib/store.ts with a DB-backed store (e.g., SQLite/Neon/Redis).
+
+---
 
 ## Log Analyzer (Phase 1)
 
-- Script: scripts/log-analyzer.ts
-- Usage: node scripts/log-analyzer.ts path/to/sample.log
-- Outputs:
-  - Count of INFO/WARN/ERROR
-  - Top 5 most frequent ERROR messages
+File
+- scripts/log-analyzer.ts
 
-## Notes
+Usage
+- node scripts/log-analyzer.ts path/to/sample.log
+  - Alternatively, npx tsx scripts/log-analyzer.ts path/to/sample.log
 
-- The dashboard uses SWR with refreshInterval to poll metrics; no useEffect fetches.
-- Metrics collection uses `systeminformation` when available, with a `node:os` fallback.
-- For production, consider durable storage (SQLite/Redis/Postgres) and HTTPS/TLS.
+Outputs
+- Count of INFO, WARN, ERROR
+- Top 5 most frequent ERROR messages
+
+[SAMPLE OUTPUT PLACEHOLDER: log-analyzer-output.txt]
+
+---
+
+## API Reference
+
+Conventions
+- JSON requests must set header: Content-Type: application/json
+- Secured endpoints require header: Authorization: Bearer <token>
+- All endpoints return JSON structure on success and error
+
+Auth
+
+1) POST /api/register
+- Body: { "email": "a@b.com", "password": "strongpass" }
+- Response 201: { "token": "...", "user": { "id": "...", "email": "a@b.com" } }
+- Errors: 400/409 with { "error": "message" }
+
+Example
+- curl -X POST http://localhost:3000/api/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"you@example.com","password":"secret123"}'
+
+2) POST /api/login
+- Body: { "email": "a@b.com", "password": "secret" }
+- Response 200: { "token": "...", "user": { ... } }
+
+3) GET /api/validate-session
+- Headers: Authorization: Bearer <token>
+- Response 200: { "ok": true, "user": { ... } }
+
+Metrics & Alerts
+
+4) GET /api/metrics?n=100
+- Collects one read, returns latest readings and recent alerts
+- Query n: number of recent metric samples to include
+- Response 200: {
+    "latest": { "cpu": 34.5, "mem": 51.2, "ts": "..." },
+    "lastN": [ ... up to n ... ],
+    "alerts": [ { "type": "CPU"|"Memory", "value": 92.1, "threshold": 80, "ts": "..." } ]
+  }
+
+Thresholds (secured)
+
+5) GET /api/config/thresholds
+- Headers: Authorization: Bearer <token>
+- Response 200: { "cpuThreshold": 80, "memThreshold": 75 }
+
+6) POST /api/config/thresholds
+- Headers: Authorization: Bearer <token>, Content-Type: application/json
+- Body: { "cpuThreshold": 80, "memThreshold": 75 }
+- Response 200: { "ok": true, "cpuThreshold": 80, "memThreshold": 75 }
+
+Reporting (secured)
+
+7) GET /api/summary?n=10
+- Headers: Authorization: Bearer <token>
+- Response 200: {
+    "totalAlerts": 12,
+    "byType": { "CPU": 8, "Memory": 4 },
+    "lastAlerts": [ "2025-10-09T09:10:11Z", ... up to n ... ],
+    "averages": { "cpu": 48.1, "mem": 62.3 }
+  }
+
+---
+
+## Dashboard (Bonus)
+
+- Path: /
+- Features:
+  - Real-time metrics chart (polling via SWR)
+  - Alerts table (active + historical)
+  - Thresholds form (secured; updates config)
+- Usage:
+  - Register, then log in to receive a session token
+  - The dashboard components send the Authorization header automatically (when integrated with the auth form/session store)
+
+![Dashboard Overview 2](/screenshots/dashboard-overview-2.png)
+![Alerts Table](/screenshots/alerts-table.png)
+![Thresholds Config](/screenshots/thresholds-config.png)
+---
+
+## Architecture Summary
+
+- lib/metrics.ts
+  - Metric collectors using systeminformation with os fallback
+  - Alert generation when values exceed thresholds
+- lib/store.ts
+  - In-memory data structures:
+    - users: Map<string, User>
+    - sessions: Map<string, Session>
+    - metrics: ring-buffer-like array
+    - alerts: array
+    - thresholds: { cpuThreshold, memThreshold }
+- lib/security.ts
+  - bcryptjs password hashing
+  - simple token-based session management (24h TTL)
+  - helper to require and validate Authorization header
+- app/api/*
+  - Route handlers (Next.js App Router) returning JSON only
+- components/*
+  - UI composed with shadcn/ui, SWR for fetching, Recharts for charts
+
+---
+
+## Security Notes
+
+- Passwords hashed with bcryptjs; no plaintext storage
+- Session tokens required for /summary and /config/thresholds
+- Sessions expire after 24 hours (configurable)
+- All API responses are JSON; error paths return structured messages
+
+---
+
+## Sample Outputs (placeholders)
+
+- Metrics Response (GET /api/metrics)
+  [SAMPLE JSON PLACEHOLDER: metrics-response.json]
+
+- Summary Response (GET /api/summary)
+  [SAMPLE JSON PLACEHOLDER: summary-response.json]
+
+- Alerts Table (UI)
+  [SCREENSHOT PLACEHOLDER: alerts-table.png]
+
+---
+
+## Troubleshooting
+
+- “Unexpected token I … is not valid JSON”
+  - The client received an HTML/text error page (Internal Server Error) but tried to parse as JSON.
+  - Ensure requests set Content-Type: application/json.
+  - Verify API returned NextResponse.json(...) on all paths; check server logs.
+
+- “Request failed (500): Internal Server Error”
+  - Check the Network tab Response body; look at <v0_app_debug_logs>.
+  - Common causes: invalid JSON body; missing headers; uncaught error in route; session token missing.
+  - Try re-registering, then logging in again to refresh the token.
+
+---
+
+## Submission Checklist
+
+- Code repository with:
+  - Proper folder structure (app/, lib/, components/, scripts/)
+  - README (this file) with setup and API usage
+  - Sample outputs/screenshots: add your images where placeholders are noted
+- Commit quality:
+  - Meaningful messages per logical change
+- Documentation:
+  - Inline comments in critical modules (metrics, security, store)
+  - Short architecture summary (above)
+
+---
