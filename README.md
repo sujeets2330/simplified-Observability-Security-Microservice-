@@ -2,10 +2,10 @@
 
 A simplified observability and security microservice that collects system metrics, generates alerts, and exposes secure APIs for reporting. Includes a bonus web dashboard for visualization and configuration, plus a standalone Log Analyzer script.
 
-![Dashboard Overview 1](/screenshots/dashboard-overview-1.png)
-![Dashboard Overview 2](/screenshots/dashboard-overview-2.png)
-![Alerts Table](/screenshots/alerts-table.png)
-![Thresholds Config](/screenshots/thresholds-config.png)
+![Dashboard Overview 1](/SCREENSHOTS/dashboard-overview-1.png)
+![Dashboard Overview 2](/SCREENSHOTS/dashboard-overview-2.png)
+![Alerts Table](/SCREENSHOTS/alerts-table.png)
+![Thresholds Config](/SCREENSHOTS/thresholds-config.png)
 
 ## Table of Contents
 - Overview
@@ -83,7 +83,6 @@ Outputs
 - Count of INFO, WARN, ERROR
 - Top 5 most frequent ERROR messages
 
-[SAMPLE OUTPUT PLACEHOLDER: log-analyzer-output.txt]
 
 ---
 
@@ -160,9 +159,9 @@ Reporting (secured)
   - Register, then log in to receive a session token
   - The dashboard components send the Authorization header automatically (when integrated with the auth form/session store)
 
-![Dashboard Overview 2](/screenshots/dashboard-overview-2.png)
-![Alerts Table](/screenshots/alerts-table.png)
-![Thresholds Config](/screenshots/thresholds-config.png)
+![Dashboard Overview 2](/SCREENSHOTS/dashboard-overview-2.png)
+![Alerts Table](/SCREENSHOTS/alerts-table.png)
+![Thresholds Config](/SCREENSHOTS/thresholds-config.png)
 ---
 
 ## Architecture Summary
