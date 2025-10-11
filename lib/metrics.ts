@@ -79,6 +79,9 @@
 //   return reading
 // }
 
+// Metrics collection helper with systeminformation fallback to node:os.
+// Generates alerts based on thresholds.
+
 import { store } from "./store"
 import type { Alert, MetricReading } from "./types"
 import { generateId } from "./security"
@@ -88,28 +91,33 @@ async function getCpuPercent(): Promise<number> {
   try {
     const si = await import("systeminformation")
     const load = await si.currentLoad()
-    return Math.max(0, Math.min(100, load.currentload))
-  } catch (err) {
-    console.warn("[metrics] systeminformation CPU failed:", err)
-
-    const start = os.cpus()
-    await new Promise((r) => setTimeout(r, 500))
-    const end = os.cpus()
-
-    let idleDiff = 0
-    let totalDiff = 0
-    for (let i = 0; i < start.length; i++) {
-      const s = start[i].times
-      const e = end[i].times
-      const idle = e.idle - s.idle
-      const total = e.user - s.user + (e.nice - s.nice) + (e.sys - s.sys) + (e.irq - s.irq) + idle
-      idleDiff += idle
-      totalDiff += total
+    const pct = Number(load.currentload)
+    if (Number.isFinite(pct)) {
+      return Math.max(0, Math.min(100, pct))
     }
-
-    const usage = (1 - idleDiff / totalDiff) * 100
-    return Math.max(0, Math.min(100, usage))
+  } catch {
+    // ignore and use fallback
   }
+  // Fallback using sampling with os.cpus()
+  const start = os.cpus()
+  await new Promise((r) => setTimeout(r, 500))
+  const end = os.cpus()
+  let idleDiff = 0
+  let totalDiff = 0
+  for (let i = 0; i < start.length; i++) {
+    const s = start[i].times
+    const e = end[i].times
+    const idle = e.idle - s.idle
+    const total = e.user - s.user + (e.nice - s.nice) + (e.sys - s.sys) + (e.irq - s.irq) + idle
+    idleDiff += idle
+    totalDiff += total
+  }
+  if (totalDiff <= 0) {
+    return 0 // guard against division by zero leading to NaN
+  }
+  const usage = (1 - idleDiff / totalDiff) * 100
+  const clamped = Math.max(0, Math.min(100, usage))
+  return Number.isFinite(clamped) ? clamped : 0
 }
 
 async function getMemPercent(): Promise<number> {
@@ -118,15 +126,15 @@ async function getMemPercent(): Promise<number> {
     const mem = await si.mem()
     const used = mem.active ?? mem.used
     const pct = (used / mem.total) * 100
-    return Math.max(0, Math.min(100, pct))
-  } catch (err) {
-    console.warn("[metrics] systeminformation Memory failed:", err)
-
+    const clamped = Math.max(0, Math.min(100, pct))
+    return Number.isFinite(clamped) ? clamped : 0
+  } catch {
     const total = os.totalmem()
     const free = os.freemem()
     const used = total - free
     const pct = (used / total) * 100
-    return Math.max(0, Math.min(100, pct))
+    const clamped = Math.max(0, Math.min(100, pct))
+    return Number.isFinite(clamped) ? clamped : 0
   }
 }
 
@@ -135,8 +143,7 @@ export async function collectAndStoreMetrics(): Promise<MetricReading> {
   const reading: MetricReading = { ts: Date.now(), cpuPercent, memPercent }
   store.addMetric(reading)
 
-  const thresholds = store.getThresholds() ?? { cpuThreshold: 80, memThreshold: 80 }
-
+  const thresholds = store.getThresholds()
   if (cpuPercent > thresholds.cpuThreshold) {
     const alert: Alert = {
       id: generateId("alert"),
@@ -147,7 +154,6 @@ export async function collectAndStoreMetrics(): Promise<MetricReading> {
     }
     store.addAlert(alert)
   }
-
   if (memPercent > thresholds.memThreshold) {
     const alert: Alert = {
       id: generateId("alert"),

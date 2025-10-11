@@ -12,7 +12,16 @@ import { AlertsTable } from "@/components/alerts-table"
 type MetricReading = { ts: number; cpuPercent: number; memPercent: number }
 type Alert = { id: string; type: "CPU" | "Memory"; value: number; threshold: number; ts: number }
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+const fetcher = async (url: string) => {
+  const res = await fetch(url, { cache: "no-store" })
+  const text = await res.text()
+  if (!res.ok) throw new Error(text.slice(0, 200) || "Request failed")
+  try {
+    return JSON.parse(text)
+  } catch {
+    throw new Error("Non-JSON response: " + text.slice(0, 120))
+  }
+}
 
 export default function HomePage() {
   const [token, setToken] = useState<string | null>(null)
@@ -23,13 +32,14 @@ export default function HomePage() {
     setEmail(localStorage.getItem("email"))
   }, [])
 
-  const { data, isLoading, mutate } = useSWR<{
+  const { data, isLoading, error, mutate } = useSWR<{
     latest: MetricReading
     readings: MetricReading[]
     alertsRecent: Alert[]
     thresholds: { cpuThreshold: number; memThreshold: number }
   }>("/api/metrics?n=100", fetcher, { refreshInterval: 5000 })
 
+  // Summary (secure) - only fetch when token exists
   const summaryFetcher = (url: string) =>
     fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : undefined }).then((r) => r.json())
   const { data: summary } = useSWR(token ? "/api/summary?n=10" : null, summaryFetcher, { refreshInterval: 10000 })
@@ -82,25 +92,19 @@ export default function HomePage() {
             </CardHeader>
             <CardContent className="grid gap-2 text-sm">
               <div>
-                CPU: {typeof data?.latest?.cpuPercent === "number"
+                CPU:{" "}
+                {data?.latest && Number.isFinite(data.latest.cpuPercent)
                   ? `${data.latest.cpuPercent.toFixed(1)}%`
                   : "—"}
               </div>
               <div>
-                Memory: {typeof data?.latest?.memPercent === "number"
+                Memory:{" "}
+                {data?.latest && Number.isFinite(data.latest.memPercent)
                   ? `${data.latest.memPercent.toFixed(1)}%`
                   : "—"}
               </div>
-              <div>
-                CPU threshold: {typeof data?.thresholds?.cpuThreshold === "number"
-                  ? `${data.thresholds.cpuThreshold}%`
-                  : "—"}
-              </div>
-              <div>
-                Memory threshold: {typeof data?.thresholds?.memThreshold === "number"
-                  ? `${data.thresholds.memThreshold}%`
-                  : "—"}
-              </div>
+              <div>CPU threshold: {data?.thresholds ? `${data.thresholds.cpuThreshold}%` : "—"}</div>
+              <div>Memory threshold: {data?.thresholds ? `${data.thresholds.memThreshold}%` : "—"}</div>
             </CardContent>
           </Card>
 
@@ -114,21 +118,21 @@ export default function HomePage() {
                 <div>
                   By type — CPU: {summary.byType?.CPU ?? 0}, Memory: {summary.byType?.Memory ?? 0}
                 </div>
-                <div>
-                  Avg CPU (last 10): {typeof summary.averages?.cpuPercent === "number"
-                    ? `${summary.averages.cpuPercent.toFixed(1)}%`
-                    : "—"}
-                </div>
-                <div>
-                  Avg Mem (last 10): {typeof summary.averages?.memPercent === "number"
-                    ? `${summary.averages.memPercent.toFixed(1)}%`
-                    : "—"}
-                </div>
+                <div>Avg CPU (last 10): {summary.averages?.cpuPercent?.toFixed?.(1) ?? "—"}%</div>
+                <div>Avg Mem (last 10): {summary.averages?.memPercent?.toFixed?.(1) ?? "—"}%</div>
               </CardContent>
             </Card>
           )}
         </div>
       </section>
+
+      {error && (
+        <Card className="border-destructive">
+          <CardContent className="py-3 text-sm text-destructive">
+            Metrics error: {String(error.message || error)}
+          </CardContent>
+        </Card>
+      )}
 
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
