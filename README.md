@@ -9,7 +9,7 @@ A simplified observability and security microservice that collects system metric
 
 ## Table of Contents
 - Overview
-- What’s Implemented (Phases 1–4 + Bonus)
+- What’s Implemented (Phases 1–4)
 - Quick Start (Local)
 - Log Analyzer (Phase 1)
 - API Reference (Auth, Metrics, Thresholds, Summary)
