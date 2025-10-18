@@ -97,13 +97,11 @@ Auth
 
 1) POST /api/register
 - Body: { "email": "a@b.com", "password": "strongpass" }
-- Response 201: { "token": "...", "user": { "id": "...", "email": "a@b.com" } }
-- Errors: 400/409 with { "error": "message" }
 
 Example
 - curl -X POST http://localhost:3000/api/register \
   -H "Content-Type: application/json" \
-  -d '{"email":"you@example.com","password":"secret123"}'
+  
 
 2) POST /api/login
 - Body: { "email": "a@b.com", "password": "secret" }
@@ -118,33 +116,20 @@ Metrics & Alerts
 4) GET /api/metrics?n=100
 - Collects one read, returns latest readings and recent alerts
 - Query n: number of recent metric samples to include
-- Response 200: {
-    "latest": { "cpu": 34.5, "mem": 51.2, "ts": "..." },
-    "lastN": [ ... up to n ... ],
-    "alerts": [ { "type": "CPU"|"Memory", "value": 92.1, "threshold": 80, "ts": "..." } ]
-  }
 
 Thresholds (secured)
 
 5) GET /api/config/thresholds
 - Headers: Authorization: Bearer <token>
-- Response 200: { "cpuThreshold": 80, "memThreshold": 75 }
 
 6) POST /api/config/thresholds
 - Headers: Authorization: Bearer <token>, Content-Type: application/json
 - Body: { "cpuThreshold": 80, "memThreshold": 75 }
-- Response 200: { "ok": true, "cpuThreshold": 80, "memThreshold": 75 }
 
 Reporting (secured)
 
 7) GET /api/summary?n=10
 - Headers: Authorization: Bearer <token>
-- Response 200: {
-    "totalAlerts": 12,
-    "byType": { "CPU": 8, "Memory": 4 },
-    "lastAlerts": [ "2025-10-09T09:10:11Z", ... up to n ... ],
-    "averages": { "cpu": 48.1, "mem": 62.3 }
-  }
 
 ---
 
