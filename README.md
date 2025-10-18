@@ -1,4 +1,4 @@
-# CodeXray Observability & Security Microservice
+# System Observability & Security Microservice
 
 A simplified observability and security microservice that collects system metrics, generates alerts, and exposes secure APIs for reporting. Includes a bonus web dashboard for visualization and configuration, plus a standalone Log Analyzer script.
 
