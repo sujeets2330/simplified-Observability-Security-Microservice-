@@ -32,7 +32,7 @@ This project demonstrates fundamentals of observability:
 
 ---
 
-## What’s Implemented (Phases 1–4 + Bonus)
+## What’s Implemented
 
 - Phase 1: Fundamentals & Data Structures (Log Analyzer)
   - scripts/log-analyzer.ts
@@ -53,7 +53,7 @@ This project demonstrates fundamentals of observability:
 
 ---
 
-## Quick Start (Local)
+## Quick Start 
 
 Prerequisites
 - Node.js 18+ (recommended: 20 LTS)
