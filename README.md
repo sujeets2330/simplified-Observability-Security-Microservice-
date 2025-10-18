@@ -180,20 +180,6 @@ Reporting (secured)
 - All API responses are JSON; error paths return structured messages
 
 ---
-
-## Sample Outputs (placeholders)
-
-- Metrics Response (GET /api/metrics)
-  [SAMPLE JSON PLACEHOLDER: metrics-response.json]
-
-- Summary Response (GET /api/summary)
-  [SAMPLE JSON PLACEHOLDER: summary-response.json]
-
-- Alerts Table (UI)
-  [SCREENSHOT PLACEHOLDER: alerts-table.png]
-
----
-
 ## Troubleshooting
 
 - “Unexpected token I … is not valid JSON”
