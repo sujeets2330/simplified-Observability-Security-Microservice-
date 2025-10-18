@@ -133,7 +133,7 @@ Reporting (secured)
 
 ---
 
-## Dashboard (Bonus)
+## Dashboard
 
 - Path: /
 - Features:
