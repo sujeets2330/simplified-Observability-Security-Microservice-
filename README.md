@@ -207,17 +207,3 @@ Reporting (secured)
   - Try re-registering, then logging in again to refresh the token.
 
 ---
-
-## Submission Checklist
-
-- Code repository with:
-  - Proper folder structure (app/, lib/, components/, scripts/)
-  - README (this file) with setup and API usage
-  - Sample outputs/screenshots: add your images where placeholders are noted
-- Commit quality:
-  - Meaningful messages per logical change
-- Documentation:
-  - Inline comments in critical modules (metrics, security, store)
-  - Short architecture summary (above)
-
----
