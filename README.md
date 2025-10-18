@@ -18,7 +18,7 @@ A simplified observability and security microservice that collects system metric
 - Security Notes
 - Sample Outputs (placeholders)
 - Troubleshooting
-- Submission Checklist
+- Contact 
 
 ---
 
